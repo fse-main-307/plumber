@@ -1,0 +1,108 @@
+plugins {
+    // Apply the java plugin to add support for Java
+    id 'java-library'
+}
+
+sourceCompatibility = 1.8
+
+configurations {
+    // for putting Error Prone javac in bootclasspath for running tests
+    errorproneJavac
+}
+
+dependencies {
+
+    implementation "org.checkerframework:checker:${versions.checkerFramework}"
+    implementation "com.google.guava:guava:30.1-jre"
+    compileOnly "com.google.errorprone:javac:9+181-r4173-1"
+
+    // If / when other code depends on this checker, we will likely want to make these
+    // api dependencies
+    implementation project(":object-construction-qual")
+
+    // For MustCall support
+    implementation project(":must-call-qual")
+    implementation project(":must-call-checker")
+
+    // For the @CalledMethodsPredicate evaluation
+    implementation "org.springframework:spring-expression:5.3.2"
+
+    // For subtyping between @CalledMethodsPredicate annotations
+    implementation 'org.sosy-lab:java-smt:3.2.0'
+    implementation 'com.github.javaparser:javaparser-core:3.15.11'
+
+    // Use JUnit test framework
+    testImplementation "junit:junit:4.13.1"
+
+    // CF testing infrastructure
+    testImplementation "org.checkerframework:framework-test:${versions.checkerFramework}"
+
+    // CVE and KMS tests both rely on this:
+    testImplementation platform("com.amazonaws:aws-java-sdk-bom:1.11.923")
+    // For CVE tests
+    testImplementation "com.amazonaws:aws-java-sdk-ec2:1.11.950"
+    // For KMS tests
+    testImplementation "com.amazonaws:aws-java-sdk-kms:1.11.950"
+
+    // For AutoValue Builders
+    implementation "com.google.auto.value:auto-value-annotations:${versions.autoValue}"
+    testCompile "com.google.auto.value:auto-value-annotations:${versions.autoValue}"
+    testCompile "com.google.auto.value:auto-value:${versions.autoValue}"
+    testCompile "com.ryanharter.auto.value:auto-value-parcel:0.2.8"
+
+    // For Lombok Builders
+    testCompile "org.projectlombok:lombok:${versions.lombok}"
+    testCompile project(":test-lib-java")
+
+    errorproneJavac "com.google.errorprone:javac:9+181-r4173-1"
+
+}
+
+tasks.withType(JavaCompile).all {
+    options.compilerArgs.add("-Xlint:all")
+}
+
+// run google java format
+spotless {
+    // uncomment this line to temporarily disable spotless (i.e. when debugging)
+    // enforceCheck = false
+    java {
+        googleJavaFormat()
+    }
+}
+
+test {
+    inputs.files("tests/basic", "tests/cve", "tests/lombok", "tests/autovalue", "tests/disableframeworks", "tests/mustcall", "tests/socket")
+    if (!JavaVersion.current().java9Compatible) {
+        jvmArgs "-Xbootclasspath/p:${configurations.errorproneJavac.asPath}"
+    }
+    testLogging {
+        showStandardStreams = true
+        // Show the found unexpected diagnostics and expected diagnostics not found.
+        exceptionFormat "full"
+        events "failed"
+    }
+}
+
+clean.doFirst {
+    delete "${rootDir}/object-construction-checker/tests/build/"
+}
+
+apply from: rootProject.file("gradle-mvn-push.gradle")
+
+task printClasspath {
+    doLast {
+        println sourceSets.main.runtimeClasspath.asPath
+    }
+}
+
+apply plugin: 'java'
+
+sourceSets {
+    main {
+        resources {
+            // Stub files, message.properties, etc.
+            srcDirs += ['src/main/java']
+        }
+    }
+}
