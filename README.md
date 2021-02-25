@@ -8,7 +8,7 @@ As a reviewer, you should be able to inspect anything in this repository and
 the other repositories owned by this user, without compromising double-blind
 (we hope!). The repositories are:
 * plumber (this one!): the tool itself, its test suite, and our experimental machinery
-* checker-framework: a hard fork of the Checker Framework, fixed at the commit on their master branch that we used
+* checker-framework: a fork of the Checker Framework, fixed at the commit on their master branch that we used
                      for our experiments. We didn't make any modifications to this; you could diff it against
                      github.com/typetools/checker-framework/ at commit id 12fb7e65015015bbba541bf0cfee6270d4d25913,
                      but we included it here so these repos are self-contained
